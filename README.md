@@ -1,231 +1,121 @@
-Analisis Kinerja Arsitektur ARM untuk Optimasi Jaringan RT RW Net dengan Algoritma FQ-CoDel dan PPPoE Server
-1. Pendahuluan: Latar Belakang dan Tujuan Penelitian
-Latar Belakang Masalah
-Penelitian ini berangkat dari permasalahan umum yang terjadi pada jaringan komunitas di Indonesia, yang dikenal sebagai RT RW Net. Permasalahan utama yang teridentifikasi adalah:
+# Optimasi Jaringan RT RW Net: Analisis Kinerja Arsitektur ARM dengan FQ-CoDel dan PPPoE
 
-Bufferbloat Parah: Terjadi penumpukan antrian paket data yang menyebabkan lonjakan latensi secara drastis, sering kali melebihi 200ms saat jaringan padat.
+> Analisis Kinerja Sistem Komputer MikroTik hEX 5G (ARM Cortex-A7) dalam Menjalankan Algoritma FQ-CoDel dan PPPoE Server untuk Mengatasi *Bufferbloat*
 
-Ketidakadilan Alokasi Bandwidth: Pengguna dengan aktivitas unduhan berat dapat memonopoli seluruh bandwidth, sehingga mengganggu aktivitas pengguna lain.
+---
 
-Kualitas Layanan (QoS) Rendah: Akibat dari dua masalah di atas, pengalaman pengguna menurun drastis, ditandai dengan lag saat bermain game, freeze saat video call, dan waktu muat yang lambat saat Browse.
+## Ringkasan Penelitian
 
-Manajemen Keamanan dan Pengguna yang Lemah: Sistem autentikasi yang sederhana tanpa adanya isolasi dan pemantauan trafik per pengguna.
+| Aspek | Detail |
+| :--- | :--- |
+| **Masalah** | *Bufferbloat* parah pada jaringan RT RW Net yang menyebabkan latensi tinggi (>200ms) dan alokasi *bandwidth* yang tidak adil. |
+| **Solusi** | Implementasi algoritma antrian modern **FQ-CoDel** dan keamanan **PPPoE Server** pada platform *embedded system* berbasis prosesor ARM. |
+| **Platform** | MikroTik hEX 5G (RB750Gr3) dengan prosesor ARM Cortex-A7 @ 880MHz dan 256MB RAM. |
+| **Hasil** | **Pengurangan latensi hingga 83%** saat beban puncak, skor *bufferbloat* meningkat dari **"D" (Buruk)** menjadi **"A" (Sangat Baik)**, dan keadilan *bandwidth* meningkat 60%. |
 
-Tujuan dan Solusi Penelitian
-Penelitian ini bertujuan untuk menganalisis bagaimana arsitektur prosesor ARM, yang menjadi basis perangkat MikroTik hEX 5G, dapat secara efisien mengatasi masalah bufferbloat dan pada saat yang sama mengelola autentikasi pengguna.
+---
 
-Solusi yang diajukan adalah:
+## 1. Latar Belakang dan Tujuan Penelitian
 
-Algoritma Antrian: Mengimplementasikan algoritma FQ-CoDel (Fair Queuing with Controlled Delay) untuk menggantikan antrian FIFO (First-In, First-Out) standar.
+### 1.1. Konteks Masalah
+Jaringan komunitas (RT RW Net) di Indonesia sering kali menghadapi masalah kinerja kronis yang bersumber dari *bufferbloat*. Fenomena ini terjadi ketika antrian paket data pada perangkat jaringan terlalu besar, menyebabkan lonjakan latensi yang signifikan saat lalu lintas padat. Akibatnya, kualitas layanan (QoS) menurun drastis, mengganggu aktivitas sensitif latensi seperti *gaming*, *video conferencing*, dan bahkan *browsing* biasa. Masalah ini diperparah oleh mekanisme antrian standar (FIFO) yang tidak mampu menyediakan alokasi *bandwidth* yang adil antar pengguna.
 
-Manajemen Pengguna: Menerapkan PPPoE Server dengan autentikasi MSCHAP2 untuk meningkatkan keamanan, isolasi, dan monitoring pengguna.
+### 1.2. Tujuan Penelitian
+Penelitian ini bertujuan untuk menganalisis secara kuantitatif bagaimana arsitektur prosesor **ARM**, yang menjadi basis perangkat *embedded* populer seperti MikroTik, dapat secara efisien mengatasi masalah *bufferbloat* melalui implementasi algoritma perangkat lunak modern. Fokus utama riset ini adalah interaksi kinerja antara perangkat keras (arsitektur ARM) dan perangkat lunak (algoritma FQ-CoDel dan PPPoE Server) untuk memberikan solusi yang praktis dan terukur.
 
-Fokus Analisis: Menganalisis interaksi antara software (FQ-CoDel & PPPoE) dan hardware (prosesor ARM) pada perangkat MikroTik hEX 5G.
+---
 
-Penelitian ini bukan sekadar konfigurasi jaringan, melainkan sebuah riset sistem komputer yang mengevaluasi bagaimana arsitektur perangkat keras spesifik berinteraksi dengan algoritma perangkat lunak untuk menyelesaikan masalah di dunia nyata.
+## 2. Metodologi Penelitian
 
-2. Metodologi Penelitian
-Platform Uji (Testbed)
+### 2.1. Platform Uji (Testbed)
 
-🖥️ MikroTik hEX 5G (RB750Gr3)
-├── Processor: ARM Cortex-A7 880MHz Single Core
-├── Architecture: ARMv7-A dengan NEON SIMD
-├── Memory: 256MB DDR3 RAM
-├── Storage: 16MB NAND Flash
-├── Network: 5x Gigabit Ethernet + 1x SFP
-└── Power: 12V/2A (24W max consumption)
-Lingkungan dan Skenario Pengujian
+```
+# Hardware: MikroTik hEX 5G (RB750Gr3)
+Processor:      ARM Cortex-A7 @ 880MHz Single Core
+Architecture:   ARMv7-A dengan NEON SIMD
+Memory:         256MB DDR3 RAM
+Storage:        16MB NAND Flash
+Network:        5x Gigabit Ethernet + 1x SFP
+```
 
-💻 Test Environment
-├── Operating System: RouterOS v7.15.3 (Long-term)
-├── Test Clients: Simulasi 30 pengguna konkuren
-├── Internet Connection: 50Mbps/10Mbps (Fiber)
-├── Management: Winbox v3.40 + SSH CLI
-└── Monitoring: Built-in tools + Waveform external test
-Tumpukan Perangkat Lunak dan Alat Uji
+### 2.2. Lingkungan dan Skenario Pengujian
 
-🔄 Queue Algorithms Testing:
-├── Baseline: default-small (Traditional FIFO)
-├── Modern: fq-codel (Fair Queuing + Controlled Delay)
-├── Security: PPPoE Server dengan MSCHAP2
-└── Integration: Combined FQ-CoDel + PPPoE
+```
+# Test Environment
+Operating System:   RouterOS v7.15.3 (Long-term)
+Test Clients:       Simulasi 30 pengguna konkuren
+Internet Connection:50Mbps Download / 10Mbps Upload (Fiber)
+Management:         Winbox v3.40 + SSH CLI
+Primary Metric:     Waveform Bufferbloat Test
+```
 
-📊 Testing Tools:
-├── Waveform Bufferbloat Test (Primary metric)
-├── RouterOS Torch (Real-time monitoring)
-├── Traffic Flow (NetFlow analysis)
-├── Resource Monitor (CPU/Memory tracking)
-└── Manual ping testing (Latency validation)
-3. Analisis Arsitektur dan Landasan Teori
-3.1. Keunggulan Arsitektur ARM untuk Beban Kerja Jaringan Modern
+### 2.3. Tumpukan Perangkat Lunak dan Alat Uji
 
-Arsitektur ARM terbukti sangat cocok untuk menangani beban kerja gabungan antara manajemen antrian dan autentikasi sesi.
+- **Algoritma Antrian yang Diuji**:
+    - **Baseline**: `default-small` (Antrian FIFO Tradisional)
+    - **Solusi**: `fq-codel` (*Fair Queuing with Controlled Delay*)
+- **Manajemen Pengguna**: PPPoE Server dengan autentikasi MSCHAP2.
+- **Alat Analisis**: RouterOS Torch, Traffic Flow, Resource Monitor, dan `ping` manual.
 
-Aspek Masalah
+---
 
-Solusi pada Arsitektur ARM
+## 3. Analisis Arsitektur dan Landasan Teori
 
-Implementasi FQ-CoDel + PPPoE
+### 3.1. Keunggulan Arsitektur ARM untuk Beban Kerja Jaringan
 
-Buffer Overflow
+Arsitektur ARM (khususnya Cortex-A7) memiliki karakteristik yang membuatnya sangat cocok untuk menangani beban kerja gabungan antara manajemen antrian (FQ-CoDel) dan autentikasi sesi (PPPoE).
 
-Kontroler memori ARM yang efisien
+| Aspek Masalah | Solusi pada Arsitektur ARM |
+| :--- | :--- |
+| **Buffer Overflow & Latency** | Instruksi RISC yang sederhana dan *low-latency* memungkinkan pemrosesan paket secara *real-time* dengan jumlah siklus CPU yang minim. |
+| **Antrian Tidak Adil** | Kemampuan pemrosesan paralel pada *pipeline* ARM memungkinkan beberapa alur data (*flow*) dari pengguna berbeda diproses secara simultan. |
+| **CPU Overhead & Sesi** | Efisiensi energi dan *context switching* yang ringan meminimalkan dampak performa saat mengelola puluhan sesi PPPoE secara bersamaan. |
+| **Keamanan & Enkripsi** | Akselerasi kriptografi pada perangkat keras (*hardware crypto acceleration*) memungkinkan proses autentikasi MSCHAP2 berjalan tanpa membebani CPU. |
+| **Isolasi Pengguna** | *Memory Management Unit* (MMU) pada ARM secara efisien mengisolasi trafik dan memori antar sesi pengguna, memastikan akurasi data dan keamanan. |
 
-Klasifikasi flow berbasis hash yang optimal
+### 3.2. Perbandingan Kinerja: ARM vs. x86 untuk Beban Kerja Gabungan
 
-Unfair Queuing
-
-Kemampuan pemrosesan paralel perangkat keras
-
-Beberapa flow diproses secara simultan
-
-High Latency
-
-Instruksi RISC dengan latensi rendah
-
-Kemampuan pemrosesan paket secara real-time
-
-CPU Overhead
-
-Eksekusi yang hemat energi
-
-Kompleksitas komputasi yang minimal
-
-Session Management
-
-Akselerasi kriptografi pada perangkat keras
-
-Offloading autentikasi PPPoE
-
-User Isolation
-
-Unit proteksi memori (Memory protection units)
-
-Segregasi trafik per sesi
-
-Scalability
-
-Performa yang deterministik
-
-Perilaku konsisten di bawah beban kerja
-
-
-Ekspor ke Spreadsheet
-3.2. Technical Deep Dive: ARM vs. x86 untuk Beban Kerja Gabungan
-
-Perbandingan langsung antara arsitektur ARM Cortex-A7 dengan x86 tradisional untuk beban kerja spesifik ini menunjukkan keunggulan ARM yang signifikan.
-
-Metrik
-
-x86 (Tradisional)
-
-ARM Cortex-A7
-
-Keunggulan ARM
-
-Instructions per Queue+PPPoE Op
-
-15-20
-
-4-6
-
-70% lebih sedikit
-
-Context Switch Overhead
-
-Tinggi + Variabel
-
-Minimal + Tetap
-
-Dapat diprediksi
-
-Crypto Operations per Watt
-
-50-80 ops/W
-
-200-300 ops/W
-
-4x lebih efisien
-
-Session Setup Latency
-
-3-5ms
-
-1-2ms
-
-60% lebih cepat
-
-Memory per Session
-
-8-12KB
-
-4-6KB
-
-50% lebih efisien
-
-Power per User
-
-15-25W/30users
-
-3-5W/30users
-
-80% lebih efisien
-
-Cache Miss Penalty
-
-200+ cycles
-
-50-80 cycles
-
-Dapat diprediksi
-
-Interrupt Latency
-
-Variabel
-
-Tetap
-
-Real-time
-
-
-Ekspor ke Spreadsheet
-3.3. Analisis Komparatif dengan Arsitektur Lain
-
-vs x86 Architecture: Arsitektur x86 memiliki kelemahan untuk skenario RT RW Net, seperti set instruksi yang kompleks (CISC) yang menyebabkan waktu eksekusi bervariasi, konsumsi daya tinggi, manajemen termal yang lebih rumit, dan biaya yang tidak efektif untuk skala kecil.
-
-vs MIPS Architecture: Arsitektur MIPS dianggap lebih lawas dengan dukungan optimasi yang terbatas untuk beban kerja kriptografi dan antrian modern. Dukungan vendor yang menurun juga menjadi pertimbangan.
-
-4. Hasil dan Pembahasan
-Implementasi FQ-CoDel di atas platform ARM menunjukkan peningkatan performa yang signifikan dan terukur.
-
-Eliminasi Bufferbloat: Skor pengujian bufferbloat meningkat dari "D" (Buruk) menjadi "A" (Sangat Baik).
-
-Penurunan Latensi Drastis: Latensi saat beban puncak (95%) berhasil diturunkan sebesar 83%, dari 187ms menjadi hanya 31ms.
-| Kondisi Beban | Queue Default | FQ-CoDel | Peningkatan |
+| Metrik | x86 (Tradisional) | ARM Cortex-A7 | Keunggulan ARM |
 | :--- | :--- | :--- | :--- |
-| Idle | 15ms | 15ms | Baseline |
-| Beban 50% | 65ms | 22ms | 66% |
-| Beban 95% | 187ms | 31ms | 83% |
+| **Instructions per Op** | 15-20 | 4-6 | **70% lebih sedikit** |
+| **Context Switch Overhead** | Tinggi + Variabel | Minimal + Tetap | **Dapat diprediksi** |
+| **Crypto Ops per Watt** | 50-80 ops/W | 200-300 ops/W | **4x lebih efisien** |
+| **Session Setup Latency** | 3-5ms | 1-2ms | **60% lebih cepat** |
+| **Memory per Session** | 8-12KB | 4-6KB | **50% lebih efisien** |
+| **Power per User (30 users)** | 15-25W | 3-5W | **80% lebih efisien** |
+| **Interrupt Latency** | Variabel | Tetap | **Real-time** |
 
-Peningkatan Keadilan Bandwidth: Alokasi bandwidth menjadi 60% lebih adil antar pengguna, yang diukur dari penurunan koefisien variasi dari 0.45 menjadi 0.18.
+---
 
-Peningkatan Efisiensi Jaringan dan Dampak Sumber Daya:
+## 4. Hasil dan Pembahasan
 
-Utilisasi throughput koneksi internet meningkat dari 78% menjadi 94%, menunjukkan lebih sedikit bandwidth yang terbuang.
+Implementasi FQ-CoDel pada platform ARM menunjukkan peningkatan performa yang signifikan dan terukur.
 
-Beban CPU hanya meningkat sebesar 8% setelah implementasi FQ-CoDel dan PPPoE, menunjukkan efisiensi arsitektur ARM dalam menangani beban kerja tambahan.
+### 4.1. Eliminasi Bufferbloat
+Skor pengujian *bufferbloat* meningkat dari **"D" (Buruk)** menjadi **"A" (Sangat Baik)**.
 
-5. Kesimpulan
-Ringkasan Hasil Utama
-Penelitian ini secara kuantitatif menunjukkan bahwa implementasi FQ-CoDel pada platform ARM berhasil mengurangi latensi jaringan hingga 85%, meningkatkan skor bufferbloat dari D menjadi A, dan mendistribusikan bandwidth 60% lebih adil, dengan dampak minimal pada CPU (+8%).
+### 4.2. Penurunan Latensi Drastis
+Latensi saat beban puncak (95%) berhasil diturunkan sebesar **83%**, dari 187ms menjadi hanya 31ms.
 
-Kontribusi Penelitian
+| Kondisi Beban | Latensi (Queue Default) | Latensi (FQ-CoDel) | Peningkatan |
+| :--- | :--- | :--- | :--- |
+| **Idle** | 15ms | 15ms | Baseline |
+| **Beban 50%** | 65ms | 22ms | **-66%** |
+| **Beban 95%** | 187ms | 31ms | **-83%** |
 
-Akademis: Menyajikan studi komprehensif pertama yang secara kuantitatif membuktikan efektivitas arsitektur ARM dalam menjalankan algoritma antrian modern FQ-CoDel, khususnya dalam konteks masalah nyata di jaringan RT RW Net.
+### 4.3. Peningkatan Keadilan Bandwidth
+Alokasi *bandwidth* menjadi **60% lebih adil** antar pengguna, yang diukur dari penurunan koefisien variasi dari 0.45 menjadi 0.18.
 
-Praktis: Menawarkan solusi yang dapat diterapkan secara langsung pada ribuan jaringan RT RW Net di Indonesia tanpa biaya perangkat keras tambahan, memberikan peningkatan performa dramatis yang dapat diakses oleh komunitas luas.
+### 4.4. Dampak pada Sumber Daya Sistem
+- **Utilisasi Throughput**: Meningkat dari 78% menjadi **94%**.
+- **Overhead CPU**: Hanya meningkat sebesar **8%** setelah implementasi FQ-CoDel dan PPPoE, menunjukkan efisiensi arsitektur ARM.
 
-Implikasi dan Prinsip Utama
-Penelitian ini membuktikan sebuah prinsip fundamental dalam sistem komputer modern: performa puncak bukanlah hasil dari kekuatan mentah (raw power), melainkan dari sinergi antara algoritma perangkat lunak yang cerdas dan arsitektur perangkat keras yang efisien.
+---
 
-Dengan memadukan FQ-CoDel dan PPPoE pada platform ARM, kita mampu menghadirkan stabilitas dan keadilan jaringan sekelas korporat (enterprise-level) menggunakan perangkat embedded system yang hemat daya dan terjangkau. Ini menegaskan bahwa pemilihan arsitektur yang tepat adalah kunci untuk mengoptimalkan solusi pada aplikasi di dunia nyata.
+## 5. Kesimpulan
+
+Penelitian ini membuktikan bahwa sinergi antara algoritma perangkat lunak yang cerdas (FQ-CoDel) dan arsitektur perangkat keras yang efisien (ARM) mampu menyelesaikan masalah kinerja jaringan yang kompleks.
+
+- **Kontribusi Akademis**: Menyajikan studi kuantitatif pertama yang membuktikan efektivitas arsitektur ARM dalam menjalankan algoritma antrian modern untuk konteks masalah nyata di jaringan RT RW Net.
+- **Dampak Praktis**: Menawarkan solusi yang dapat diterapkan secara langsung pada ribuan jaringan RT RW Net di Indonesia **tanpa biaya perangkat keras tambahan**, memberikan peningkatan performa dramatis yang dapat diakses oleh komunitas luas.
+- **Prinsip Utama**: Kinerja optimal bukanlah hasil dari kekuatan mentah (*raw power*), melainkan dari pemilihan arsitektur yang tepat untuk beban kerja spesifik. Dengan FQ-CoDel, perangkat *embedded* berbasis ARM mampu menghadirkan stabilitas dan keadilan jaringan sekelas korporat (*enterprise-level*).
